@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>Aether Gesture - Skripsi Edition</title>
+    <title>Aether Gesture - Final Cloud Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -43,7 +43,6 @@
                 heartPoints.push(xH, yH, (Math.random() - 0.5) * 0.5);
             }
 
-            // Text Generator Helper
             function generateTextPoints(text, size) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -66,9 +65,8 @@
             }
 
             textLovePoints.push(...generateTextPoints('I LOVE YOU', 60));
-            textSkripsiPoints.push(...generateTextPoints('GOOD LUCK SIDANGNYA!', 45));
+            textSkripsiPoints.push(...generateTextPoints('SEMANGAT SIDANGNYA!', 45));
 
-            // Foto PNG
             const img = new Image();
             img.src = 'foto.png';
             img.onload = () => {
@@ -121,30 +119,31 @@
             const ui = document.getElementById('status');
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
-                const check = (t, p) => lm[t].y < lm[p].y;
-                const indexUp = check(8, 6), middleUp = check(12, 10), ringUp = check(16, 14), pinkyUp = check(20, 18);
+                const check = (tip, pip) => lm[tip].y < lm[pip].y;
+                
+                const indexUp = check(8, 6);
+                const middleUp = check(12, 10);
+                const ringUp = check(16, 14);
+                const pinkyUp = check(20, 18);
+                const thumbDist = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y);
+                const isThumbFolded = thumbDist < 0.1;
 
                 if (lm[0].y < lm[9].y) {
                     currentShape = 'spread'; ui.innerText = "VOID"; targetColor.setHex(0x333333);
                 } 
-                // 4 Jari: Pesan Semangat Skripsi
-                else if (indexUp && middleUp && ringUp && pinkyUp && (lm[4].y > lm[3].y)) {
+                else if (indexUp && middleUp && ringUp && pinkyUp && isThumbFolded) {
                     currentShape = 'skripsi'; ui.innerText = "SUPPORT MODE"; targetColor.setHex(0xffff00);
                 }
-                // 3 Jari: I Love You
                 else if (indexUp && middleUp && ringUp && !pinkyUp) {
                     currentShape = 'text'; ui.innerText = "MESSAGE"; targetColor.setHex(0xff00ff);
                 } 
-                // 1 Jari: Foto
                 else if (indexUp && !middleUp && !ringUp) {
                     currentShape = 'photo'; ui.innerText = "DNA PATTERN";
                 } 
-                // Peace: Heart
                 else if (indexUp && middleUp && !ringUp) {
                     currentShape = 'heart'; ui.innerText = "HEARTBEAT"; targetColor.setHex(0xff3366);
                 } 
-                // 5 Jari (Telapak): Supernova
-                else if (indexUp && middleUp && ringUp && pinkyUp && (lm[4].y < lm[3].y)) {
+                else if (indexUp && middleUp && ringUp && pinkyUp && !isThumbFolded) {
                     currentShape = 'sphere'; ui.innerText = "SUPERNOVA"; targetColor.setHex(0x00ffaa);
                     particleSystem.scale.lerp(new THREE.Vector3(2.5, 2.5, 2.5), 0.1);
                 } 
