@@ -2,66 +2,75 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>Aether Gesture - Cinematic Edition</title>
+    <title>Aether Gesture - Skripsi Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
         #ui { position: absolute; top: 40px; width: 100%; text-align: center; color: white; z-index: 10; pointer-events: none; }
-        #status { font-size: 28px; font-weight: bold; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,255,255,0.8); color: #fff; }
+        #status { font-size: 26px; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
         .label { font-size: 10px; letter-spacing: 5px; color: #444; margin-bottom: 5px; }
-        .input_video { position: fixed; bottom: 20px; left: 20px; width: 150px; transform: scaleX(-1); border-radius: 12px; opacity: 0.2; border: 1px solid #333; filter: grayscale(1); }
+        .input_video { position: fixed; bottom: 20px; left: 20px; width: 150px; transform: scaleX(-1); border-radius: 12px; opacity: 0.2; filter: grayscale(1); border: 1px solid #333; }
     </style>
 </head>
 <body>
-
     <div id="ui">
-        <div class="label">NEURAL LINK ESTABLISHED</div>
+        <div class="label">NEURAL LINK CONNECTED</div>
         <div id="status">SISTEM SIAP</div>
     </div>
-
     <video class="input_video"></video>
     <div id="container"></div>
 
     <script>
         let currentShape = 'sphere';
         const particleCount = 10000;
-        const spherePoints = [], heartPoints = [], textPoints = [], photoPoints = [], photoColors = [], spreadPoints = [];
+        const spherePoints = [], heartPoints = [], textLovePoints = [], textSkripsiPoints = [], photoPoints = [], photoColors = [], spreadPoints = [];
         let targetColor = new THREE.Color(0x00ffff);
 
         function initAllShapes() {
             for (let i = 0; i < particleCount; i++) {
+                // Sphere
                 const u = Math.random() * Math.PI * 2;
                 const v = Math.acos((Math.random() * 2) - 1);
                 spherePoints.push(2.5 * Math.sin(v) * Math.cos(u), 2.5 * Math.sin(v) * Math.sin(u), 2.5 * Math.cos(v));
+                // Spread
                 spreadPoints.push((Math.random()-0.5)*25, (Math.random()-0.5)*25, (Math.random()-0.5)*25);
-
+                // Heart
                 const t = Math.random() * Math.PI * 2;
                 const xH = 0.22 * (16 * Math.pow(Math.sin(t), 3));
                 const yH = 0.22 * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
                 heartPoints.push(xH, yH, (Math.random() - 0.5) * 0.5);
             }
 
-            const tCanvas = document.createElement('canvas');
-            const tCtx = tCanvas.getContext('2d');
-            tCanvas.width = 500; tCanvas.height = 100;
-            tCtx.fillStyle = 'white'; tCtx.font = 'bold 55px Arial'; tCtx.textAlign = 'center';
-            tCtx.fillText('I LOVE YOU', 250, 65);
-            const tImgData = tCtx.getImageData(0,0,500,100).data;
-            const tCoords = [];
-            for(let y=0; y<100; y++) {
-                for(let x=0; x<500; x++) {
-                    if(tImgData[(y*500+x)*4] > 128) tCoords.push((x-250)*0.025, (50-y)*0.025, 0);
+            // Text Generator Helper
+            function generateTextPoints(text, size) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 600; canvas.height = 150;
+                ctx.fillStyle = 'white'; ctx.font = `bold ${size}px Arial`; ctx.textAlign = 'center';
+                ctx.fillText(text, 300, 85);
+                const data = ctx.getImageData(0,0,600,150).data;
+                const coords = [];
+                for(let y=0; y<150; y++) {
+                    for(let x=0; x<600; x++) {
+                        if(data[(y*600+x)*4] > 128) coords.push((x-300)*0.02, (75-y)*0.02, 0);
+                    }
                 }
-            }
-            for(let i=0; i<particleCount; i++) {
-                const idx = (i % (tCoords.length/3)) * 3;
-                textPoints.push(tCoords[idx], tCoords[idx+1], tCoords[idx+2] + (Math.random()-0.5)*0.1);
+                const finalPoints = [];
+                for(let i=0; i<particleCount; i++) {
+                    const idx = (i % (coords.length/3)) * 3;
+                    finalPoints.push(coords[idx], coords[idx+1], coords[idx+2] + (Math.random()-0.5)*0.1);
+                }
+                return finalPoints;
             }
 
+            textLovePoints.push(...generateTextPoints('I LOVE YOU', 60));
+            textSkripsiPoints.push(...generateTextPoints('GOOD LUCK SIDANGNYA!', 45));
+
+            // Foto PNG
             const img = new Image();
-            img.src = 'foto.png'; 
+            img.src = 'foto.png';
             img.onload = () => {
                 const pCanvas = document.createElement('canvas');
                 const pCtx = pCanvas.getContext('2d');
@@ -94,12 +103,11 @@
         renderer.autoClearColor = false;
         document.getElementById('container').appendChild(renderer.domElement);
 
-        const starGeo = new THREE.BufferGeometry();
         const starPos = [];
         for(let i=0; i<3000; i++) starPos.push((Math.random()-0.5)*100, (Math.random()-0.5)*100, (Math.random()-0.5)*100);
+        const starGeo = new THREE.BufferGeometry();
         starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
-        const starMat = new THREE.PointsMaterial({ size: 0.02, color: 0x444444 });
-        scene.add(new THREE.Points(starGeo, starMat));
+        scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 0.02, color: 0x444444 })));
 
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particleCount*3), 3));
@@ -114,33 +122,32 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
                 const check = (t, p) => lm[t].y < lm[p].y;
-                
-                const indexUp = check(8, 6);
-                const middleUp = check(12, 10);
-                const ringUp = check(16, 14);
-                const pinkyUp = check(20, 18);
+                const indexUp = check(8, 6), middleUp = check(12, 10), ringUp = check(16, 14), pinkyUp = check(20, 18);
 
                 if (lm[0].y < lm[9].y) {
                     currentShape = 'spread'; ui.innerText = "VOID"; targetColor.setHex(0x333333);
                 } 
-                // PERINTAH BARU: Tiga Jari (Telunjuk, Tengah, Manis)
-                else if (indexUp && middleUp && ringUp && !pinkyUp) {
-                    currentShape = 'text'; ui.innerText = "MESSAGE RECEIVED"; targetColor.setHex(0xff00ff);
+                // 4 Jari: Pesan Semangat Skripsi
+                else if (indexUp && middleUp && ringUp && pinkyUp && (lm[4].y > lm[3].y)) {
+                    currentShape = 'skripsi'; ui.innerText = "SUPPORT MODE"; targetColor.setHex(0xffff00);
                 }
-                // Satu Jari Telunjuk (Foto)
+                // 3 Jari: I Love You
+                else if (indexUp && middleUp && ringUp && !pinkyUp) {
+                    currentShape = 'text'; ui.innerText = "MESSAGE"; targetColor.setHex(0xff00ff);
+                } 
+                // 1 Jari: Foto
                 else if (indexUp && !middleUp && !ringUp) {
                     currentShape = 'photo'; ui.innerText = "DNA PATTERN";
                 } 
-                // Peace (Hati)
+                // Peace: Heart
                 else if (indexUp && middleUp && !ringUp) {
                     currentShape = 'heart'; ui.innerText = "HEARTBEAT"; targetColor.setHex(0xff3366);
                 } 
-                // Lima Jari (Membesar)
-                else if (indexUp && middleUp && ringUp && pinkyUp) {
+                // 5 Jari (Telapak): Supernova
+                else if (indexUp && middleUp && ringUp && pinkyUp && (lm[4].y < lm[3].y)) {
                     currentShape = 'sphere'; ui.innerText = "SUPERNOVA"; targetColor.setHex(0x00ffaa);
                     particleSystem.scale.lerp(new THREE.Vector3(2.5, 2.5, 2.5), 0.1);
                 } 
-                // Mengepal (Bola Normal)
                 else {
                     currentShape = 'sphere'; ui.innerText = "AETHER CORE"; targetColor.setHex(0x00ffff);
                     particleSystem.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
@@ -158,20 +165,17 @@
             renderer.setClearColor(0x000000, 0.12);
             const pos = particleSystem.geometry.attributes.position;
             const col = particleSystem.geometry.attributes.color;
-            let tPos = spherePoints;
-            if(currentShape === 'heart') tPos = heartPoints;
-            if(currentShape === 'text') tPos = textPoints;
-            if(currentShape === 'photo') tPos = photoPoints;
-            if(currentShape === 'spread') tPos = spreadPoints;
+            let tP = spherePoints;
+            if(currentShape === 'heart') tP = heartPoints;
+            if(currentShape === 'text') tP = textLovePoints;
+            if(currentShape === 'skripsi') tP = textSkripsiPoints;
+            if(currentShape === 'photo') tP = photoPoints;
+            if(currentShape === 'spread') tP = spreadPoints;
 
             for(let i=0; i<pos.array.length; i++) {
-                pos.array[i] += (tPos[i] - pos.array[i]) * 0.08;
-                if(currentShape === 'photo' && photoColors.length > 0) {
-                    col.array[i] += (photoColors[i] - col.array[i]) * 0.06;
-                } else {
-                    const c = (i%3===0) ? targetColor.r : (i%3===1 ? targetColor.g : targetColor.b); 
-                    col.array[i] += (c - col.array[i]) * 0.06;
-                }
+                pos.array[i] += (tP[i] - pos.array[i]) * 0.08;
+                if(currentShape === 'photo' && photoColors.length > 0) col.array[i] += (photoColors[i] - col.array[i]) * 0.06;
+                else col.array[i] += ((i%3===0 ? targetColor.r : (i%3===1 ? targetColor.g : targetColor.b)) - col.array[i]) * 0.06;
             }
             pos.needsUpdate = true; col.needsUpdate = true;
             particleSystem.rotation.y += 0.003;
